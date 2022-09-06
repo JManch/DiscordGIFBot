@@ -1,6 +1,5 @@
 import os
 import logging
-from time import perf_counter, sleep
 
 import discord
 from dotenv import load_dotenv
