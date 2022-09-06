@@ -4,6 +4,7 @@ import logging
 import discord
 from dotenv import load_dotenv
 from tinydb import TinyDB, Query
+from tinydb.operations import set
 from tinydb_smartcache import SmartCacheTable
 
 # Load env vars

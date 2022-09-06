@@ -1,2 +1,2 @@
 #!/bin/sh
-pkill -f gif_bot.py
+pkill -SIGINT -f gif_bot.py
