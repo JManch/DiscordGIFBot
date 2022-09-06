@@ -1,5 +1,7 @@
 import os
 import logging
+import asyncio
+import signal
 
 import discord
 from dotenv import load_dotenv
@@ -15,6 +17,8 @@ TinyDB.table_class = SmartCacheTable
 db = TinyDB("db.json")
 Gif = Query()
 
+logger = logging.getLogger("discord")
+
 commands = {
     "gifhelp": "`gifhelp` *prints info about available commands*",
     "gifadd": "`gifadd <name> <url>` *saves GIF for current server*",
@@ -26,6 +30,15 @@ commands = {
 
 
 class MyClient(discord.Client):
+    async def on_ready(self):
+        # create signal handler
+        loop = asyncio.get_event_loop()
+        for signame in ("SIGINT", "SIGTERM"):
+            loop.add_signal_handler(
+                getattr(signal, signame),
+                lambda: asyncio.create_task(signal_handler()),
+            )
+
     async def on_message(self, message):
         # ignore bot messages
         if message.author.id == self.user.id:
@@ -56,6 +69,11 @@ class MyClient(discord.Client):
                 await guild_delete(message, words)
 
         await post(message)
+
+
+async def signal_handler():
+    await client.close()
+    asyncio.get_event_loop().stop()
 
 
 # Sends a list of available commands
