@@ -68,7 +68,7 @@ class MyClient(discord.Client):
             case "gifserverdelete":
                 await guild_delete(message, words)
 
-        await post(message)
+        await post(message, words)
 
 
 async def signal_handler():
@@ -198,33 +198,46 @@ async def remove(message, words):
 
 
 # Posts a GIF
-async def post(message):
-    # check if message contains GIF name
-    words = message.content.split()
+async def post(message, words):
+    # check if message contains GIF names and collect urls
+    before = []  # contains GIF urls to be posted before message
+    after = []  # contains GIF urls to be posted after message
+    end = []  # contains indices of GIF words at end to be removed
+    start = True
     for i, word in enumerate(words):
         # db search caches queries so this is ok
         gif = db.search((Gif.guild == message.guild.id) & (Gif.name == word))
         if not gif:
-            continue
+            start = False
+            end.clear()
         else:
-            # delete the gif name from original message content if used at start or end
-            if i == 0 or i == len(words) - 1:
+            if start:
                 words[i] = ""
-            new_content = " ".join(words)
-
-            # resend original message as bot
-            await message.delete()
-            # send GIF first if it was first word
-            if i == 0:
-                await message.channel.send(f"**{message.author.display_name}**")
-                await message.channel.send(gif[0]["url"])
-                if new_content:
-                    await message.channel.send(new_content)
+                before.append(gif[0]["url"])
             else:
-                await message.channel.send(
-                    f"**{message.author.display_name}**\n" + new_content
-                )
-                await message.channel.send(gif[0]["url"])
+                after.append(gif[0]["url"])
+                end.append(i)
+
+    # remove GIF words at end
+    for i in end:
+        words[i] = ""
+    new_content = " ".join(words)
+
+    # delete original message
+    await message.delete()
+
+    # if there are no messages before combine the content and display name
+    # into a single message to save api calls
+    if before:
+        await message.channel.send(f"**{message.author.display_name}**")
+        for url in before:
+            await message.channel.send(url)
+        await message.channel.send(new_content)
+    else:
+        await message.channel.send(f"**{message.author.display_name}**\n" + new_content)
+
+    for url in after:
+        await message.channel.send(url)
 
 
 intents = discord.Intents.default()
