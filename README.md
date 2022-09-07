@@ -27,4 +27,4 @@ To self-host the bot you must have Python version 3.10 or newer installed.
 5. Create a bot invite with the following permissions
     - Read Message/View Channels
     - Send Messages
-    - Manager Messages
+    - Manage Messages
