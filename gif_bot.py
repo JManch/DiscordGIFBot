@@ -132,7 +132,7 @@ async def guild_list(client, message, words):
     guild_list = "**Servers with Saved GIFS**"
     for id, name in guilds.items():
         guild_list = (
-            f"{guild_list}\n*Name* `{name}` *ID* `{id}` *GIF Count* `{gif_counts[id]}`"
+            f"{guild_list}\nName: `{name}`\tID: `{id}`\tGIF Count: `{gif_counts[id]}`"
         )
     await message.channel.send(guild_list)
 
