@@ -218,6 +218,10 @@ async def post(message, words):
                 after.append(gif[0]["url"])
                 end.append(i)
 
+    # abort if no GIF was used
+    if not before and not after:
+        return
+
     # remove GIF words at end
     for i in end:
         words[i] = ""
