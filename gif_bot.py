@@ -41,15 +41,15 @@ class MyClient(discord.Client):
             )
 
     async def on_message(self, message):
-        await process_message(message)
+        await process_message(self, message)
 
     async def on_message_edit(self, before, after):
-        await process_message(after)
+        await process_message(self, after)
 
 
-async def process_message(message):
+async def process_message(client, message):
     # ignore bot messages
-    if message.author.id == self.user.id:
+    if message.author.id == client.user.id:
         return
 
     # ignore empty messages
@@ -74,7 +74,7 @@ async def process_message(message):
             await list(message, words)
             return
         case "gifserverlist":
-            await guild_list(self, message, words)
+            await guild_list(client, message, words)
             return
         case "gifserverdelete":
             await guild_delete(message, words)
