@@ -226,7 +226,7 @@ async def rename(message, words):
             (Gif.guild == message.guild.id) & (Gif.name == old_name),
         )
         await message.channel.send(
-            f"Updated GIF name from `{old_name}` to `{new_name}`"
+            f"Renamed GIF name from `{old_name}` to `{new_name}`"
         )
 
 
