@@ -41,38 +41,45 @@ class MyClient(discord.Client):
             )
 
     async def on_message(self, message):
-        # ignore bot messages
-        if message.author.id == self.user.id:
+        await process_message(message)
+
+    async def on_message_edit(self, before, after):
+        await process_message(after)
+
+
+async def process_message(message):
+    # ignore bot messages
+    if message.author.id == self.user.id:
+        return
+
+    # ignore empty messages
+    if not message.content:
+        return
+
+    words = message.content.split()
+    command = words[0]
+    match command:
+        case "gifhelp":
+            await help(message, words)
             return
-
-        # ignore empty messages
-        if not message.content:
+        case "gifadd":
+            await add(message, words)
             return
+        case "gifremove":
+            await remove(message, words)
+        case "gifrename":
+            await rename(message, words)
+            return
+        case "giflist":
+            await list(message, words)
+            return
+        case "gifserverlist":
+            await guild_list(self, message, words)
+            return
+        case "gifserverdelete":
+            await guild_delete(message, words)
 
-        words = message.content.split()
-        command = words[0]
-        match command:
-            case "gifhelp":
-                await help(message, words)
-                return
-            case "gifadd":
-                await add(message, words)
-                return
-            case "gifremove":
-                await remove(message, words)
-            case "gifrename":
-                await rename(message, words)
-                return
-            case "giflist":
-                await list(message, words)
-                return
-            case "gifserverlist":
-                await guild_list(self, message, words)
-                return
-            case "gifserverdelete":
-                await guild_delete(message, words)
-
-        await post(message, words)
+    await post(message, words)
 
 
 async def signal_handler():
