@@ -23,6 +23,7 @@ commands = {
     "gifhelp": "`gifhelp` *prints info about available commands*",
     "gifadd": "`gifadd <name> <url>` *saves GIF for current server*",
     "gifremove": "`gifremove <name>` *removes GIF for current server*",
+    "gifrename": "`gifrename <old name> <new name>` *renames GIF for current server*",
     "giflist": "`giflist [visual]` *visual mode is slow due to discord rate limiting*",
     "gifserverlist": "`gifserverlist` *lists name, ID and GIF count of servers with GIFs saved*",
     "gifserverdelete": "`gifserverdelete <server ID>` *deletes all GIFs for a server, use `gifserverlist` to get ID*",
@@ -59,6 +60,9 @@ class MyClient(discord.Client):
                 return
             case "gifremove":
                 await remove(message, words)
+            case "gifrename":
+                await rename(message, words)
+                return
             case "giflist":
                 await list(message, words)
                 return
@@ -153,7 +157,9 @@ async def guild_delete(message, words):
         await message.channel.send("Server with ID `{id}` does not exist")
     else:
         guild_name = client.get_guild(message.guild.id)
-        await message.channel.send(f"Delete all saved GIFs from server with ID `{id}`")
+        await message.channel.send(
+            f"Delete all saved GIFs from server `{guild_name}` with ID `{id}`"
+        )
 
 
 # Saves a GIF
@@ -192,9 +198,36 @@ async def remove(message, words):
     name = words[1]
     removed_gif = db.remove((Gif.guild == message.guild.id) & (Gif.name == words[1]))
     if not removed_gif:
-        await message.channel.send(f"Gif with name `{name}` does not exist")
+        await message.channel.send(f"GIF with name `{name}` does not exist")
     else:
         await message.channel.send(f"Removed GIF with name `{name}`")
+
+
+# Renames a GIF
+async def rename(message, words):
+    if len(words) != 3:
+        await message.channel.send(
+            "Invalid syntax for `gifrename` command\n" + commands["gifrename"]
+        )
+        return
+
+    old_name = words[1]
+    new_name = words[2]
+
+    old_gif = db.search((Gif.guild == message.guild.id) & (Gif.name == old_name))
+    new_gif = db.search((Gif.guild == message.guild.id) & (Gif.name == new_name))
+    if not old_gif:
+        await message.channel.send(f"GIF with name `{old_name}` does not exist")
+    elif new_gif:
+        await message.channel.send(f"GIF with name `{new_name}` already exists")
+    else:
+        db.update(
+            set("name", new_name),
+            (Gif.guild == message.guild.id) & (Gif.name == old_name),
+        )
+        await message.channel.send(
+            f"Updated GIF name from `{old_name}` to `{new_name}`"
+        )
 
 
 # Posts a GIF
@@ -236,7 +269,8 @@ async def post(message, words):
         await message.channel.send(f"**{message.author.display_name}**")
         for url in before:
             await message.channel.send(url)
-        await message.channel.send(new_content)
+        if new_content != "":
+            await message.channel.send(new_content)
     else:
         await message.channel.send(f"**{message.author.display_name}**\n" + new_content)
 
@@ -246,8 +280,10 @@ async def post(message, words):
 
 intents = discord.Intents.default()
 intents.message_content = True
-
-handler = logging.FileHandler(filename="gif_bot.log", encoding="utf-8", mode="w")
-
 client = MyClient(intents=intents)
-client.run(os.getenv("TOKEN"), log_handler=handler)
+
+if os.getenv("LOGGING") == "TRUE":
+    handler = logging.FileHandler(filename="gif_bot.log", encoding="utf-8", mode="w")
+    client.run(os.getenv("TOKEN"), log_handler=handler)
+else:
+    client.run(os.getenv("TOKEN"))
